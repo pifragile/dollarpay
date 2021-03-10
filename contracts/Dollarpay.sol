@@ -40,4 +40,9 @@ contract Dollarpay {
         receiver.transfer(dollarEquivalentAmount);
         balances[msg.sender] -= dollarEquivalentAmount;
     }
+
+    function withdrawAll() public {
+        msg.sender.transfer(balances[msg.sender]);
+        balances[msg.sender] = 0;
+    }
 }

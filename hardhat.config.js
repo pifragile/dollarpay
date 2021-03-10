@@ -1,11 +1,11 @@
 /**
- * @type import('hardhat/config').HardhatUserConfig
+ * @type import("hardhat/config").HardhatUserConfig
  */
 
 require("@nomiclabs/hardhat-ethers")
 require("@nomiclabs/hardhat-waffle")
 require("@nomiclabs/hardhat-web3")
-require('dotenv').config()
+require("dotenv").config()
 
 module.exports = {
     networks: {
@@ -19,11 +19,11 @@ module.exports = {
 
 
 task("deploy:dollarpay", "Deploys the Dollarpay smart contract")
-  .addParam("oracle", "The price feed oracle address")
-  .setAction(async taskArgs => {
-      const Dollarpay = await ethers.getContractFactory("Dollarpay");
-      const dollarpay = await Dollarpay.deploy(taskArgs.oracle);
-      await dollarpay.deployed();
+    .addParam("oracle", "The price feed oracle address")
+    .setAction(async taskArgs => {
+        const Dollarpay = await ethers.getContractFactory("Dollarpay");
+        const dollarpay = await Dollarpay.deploy(taskArgs.oracle);
+        await dollarpay.deployed();
 
-      console.log("Dollarpay deployed to:", dollarpay.address);
-  });
+        console.log("Dollarpay deployed to:", dollarpay.address);
+    });

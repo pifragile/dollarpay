@@ -35,7 +35,7 @@ contract Dollarpay {
         // 1 ether = 10**18 wei
         // 10**18 wei = price/10**decimals
         // 10**(18+decimals)/price wei = 1 usd
-        uint256 dollarEquivalentAmount = amount * ((10**(18+decimals)) / price);
+        uint256 dollarEquivalentAmount = amount * ((10 ** (18 + decimals)) / price);
         require(balances[msg.sender] >= dollarEquivalentAmount, "Not enough Balance");
         receiver.transfer(dollarEquivalentAmount);
         balances[msg.sender] -= dollarEquivalentAmount;

@@ -14,13 +14,13 @@ async function setupContracts() {
 }
 
 describe("Dollarpay", function () {
-    before('setup Dollarpay contract', setupContracts)
+    before("setup Dollarpay contract", setupContracts)
 
     it("be able to transfer ethers in dollar equivalent", async function () {
         // deposit 1 ether
         const [owner, addr1] = await ethers.getSigners()
 
-        await dollarpay.connect(addr1).deposit({value: '1000000000000000000'})
+        await dollarpay.connect(addr1).deposit({value: "1000000000000000000"})
         expect(await getBalance(dollarpay.address)).to.be.equal(10 ** 18,)
         const {address} = await web3.eth.accounts.create()
         await dollarpay.connect(addr1).transferDollarEquivalent(address, 3)
@@ -39,7 +39,7 @@ describe("Dollarpay", function () {
         let balance = await getBalance(addr2.address)
         let gasPrice, gasLimit
         // deposit 1 ether
-        ({gasPrice, gasLimit} = await dollarpay.connect(addr2).deposit({value: '1000000000000000000'}))
+        ({gasPrice, gasLimit} = await dollarpay.connect(addr2).deposit({value: "1000000000000000000"}))
 
         let newBalance = await getBalance(addr2.address)
         expect(newBalance).to.be.greaterThan(balance - 10 ** 18 - gasLimit * gasPrice)

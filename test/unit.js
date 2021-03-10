@@ -1,15 +1,16 @@
 const {expect} = require("chai");
+const {getBalance} = require("../utils/utils");
 
 let dollarpay
 
 async function setupContracts() {
-    const Oracle = await ethers.getContractFactory("OracleMock");
-    oracle = await Oracle.deploy();
-    await oracle.deployed();
+    const Oracle = await ethers.getContractFactory("OracleMock")
+    oracle = await Oracle.deploy()
+    await oracle.deployed()
 
-    const Dollarpay = await ethers.getContractFactory("Dollarpay");
-    dollarpay = await Dollarpay.deploy(oracle.address);
-    await dollarpay.deployed();
+    const Dollarpay = await ethers.getContractFactory("Dollarpay")
+    dollarpay = await Dollarpay.deploy(oracle.address)
+    await dollarpay.deployed()
 }
 
 describe("Dollarpay", function () {
@@ -17,13 +18,15 @@ describe("Dollarpay", function () {
 
     it("be able to transfer ethers in dollar equivalent", async function () {
         // deposit 1 ether
-        await dollarpay.deposit({value: '1000000000000000000'})
-        expect(parseInt(await web3.eth.getBalance(dollarpay.address))).to.be.equal(1000000000000000000,)
-        const {address} = await web3.eth.accounts.create()
-        await dollarpay.transferDollarEquivalent(address, 3)
+        const [owner, addr1] = await ethers.getSigners()
 
-        expect(parseInt(await web3.eth.getBalance(address))).to.be.closeTo(500000000000000000, 2)
-        expect(parseInt(await web3.eth.getBalance(dollarpay.address))).to.be.closeTo(500000000000000000, 2)
+        await dollarpay.connect(addr1).deposit({value: '1000000000000000000'})
+        expect(await getBalance(dollarpay.address)).to.be.equal(10 ** 18,)
+        const {address} = await web3.eth.accounts.create()
+        await dollarpay.connect(addr1).transferDollarEquivalent(address, 3)
+
+        expect(await getBalance(address)).to.be.closeTo(5 * 10 ** 17, 2)
+        expect(await getBalance(dollarpay.address)).to.be.closeTo(5 * 10 ** 17, 2)
     });
 
     it("not allow payments if you dont have enough balance", async function () {

@@ -28,6 +28,7 @@ contract OracleMock {
         uint256 updatedAt,
         uint80 answeredInRound
     ){
+        // 1 ether = 6 dollars
         return (1, 600000000, 1, 1, 1);
     }
 
@@ -41,6 +42,7 @@ contract OracleMock {
         uint256 updatedAt,
         uint80 answeredInRound
     ){
+        // 1 ether = 6 dollars
         return (1, 600000000, 1, 1, 1);
     }
 }

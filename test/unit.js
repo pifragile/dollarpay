@@ -34,6 +34,21 @@ describe("Dollarpay", function () {
         expect(dollarpay.transferDollarEquivalent(address, 10)).to.be.revertedWith("Not enough Balance")
     });
 
+    it("should decrease balance on payment", async function () {
+        const [owner, addr1, addr2, addr3] = await ethers.getSigners()
+        await dollarpay.connect(addr3).deposit({value: "1000000000000000000"})
+        const {address} = await web3.eth.accounts.create()
+        await dollarpay.connect(addr3).transferDollarEquivalent(address, 6)
+        expect(dollarpay.transferDollarEquivalent(address, 6)).to.be.revertedWith("Not enough Balance")
+    });
+
+        it("should decrease balance on withdrawal", async function () {
+        const [owner, addr1, addr2, addr3] = await ethers.getSigners()
+        await dollarpay.connect(addr3).deposit({value: "1000000000000000000"})
+        await dollarpay.connect(addr3).withdrawAll()
+        expect(dollarpay.transferDollarEquivalent(addr1.address, 6)).to.be.revertedWith("Not enough Balance")
+    });
+
     it("should be able to withdraw all funds", async function () {
         const [owner, addr1, addr2] = await ethers.getSigners()
         let balance = await getBalance(addr2.address)

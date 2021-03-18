@@ -2,7 +2,14 @@ pragma solidity ^0.7.3;
 
 import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 
-contract OracleMock is AggregatorV3Interface {
+/**
+ * @dev This mock oracle is used for testing the setPriceMultiplierFunction of Dollarpay
+ * We are aware that the pattern with the randomness is not optimal, but a deterministic soulution
+ * is not possible at the moment as the getRoundData and latestRoundData are defined as view
+ * by AggregatorV3Interface.
+ */
+contract RandomPriceOracleMock is AggregatorV3Interface {
+
     function decimals() external view override returns (uint8){
         return 8;
     }
@@ -15,9 +22,10 @@ contract OracleMock is AggregatorV3Interface {
         return 1;
     }
 
-    // getRoundData and latestRoundData should both raise "No data present"
-    // if they do not have data to report, instead of returning unset values
-    // which could be misinterpreted as actual reported values.
+    function random() internal view returns (int256) {
+        return (int(keccak256(abi.encodePacked(block.difficulty, block.timestamp))) % 100000000) + 100000000;
+    }
+
     function getRoundData(uint80 _roundId)
     external
     view
@@ -29,8 +37,7 @@ contract OracleMock is AggregatorV3Interface {
         uint256 updatedAt,
         uint80 answeredInRound
     ){
-        // 1 ether = 6 dollars
-        return (1, 600000000, 1, 1, 1);
+        return (1, random(), 1, 1, 1);
     }
 
     function latestRoundData()
@@ -44,7 +51,6 @@ contract OracleMock is AggregatorV3Interface {
         uint256 updatedAt,
         uint80 answeredInRound
     ){
-        // 1 ether = 6 dollars
-        return (1, 600000000, 1, 1, 1);
+        return (1, random(), 1, 1, 1);
     }
 }

@@ -112,22 +112,6 @@ describe("Dollarpay", function () {
         expect(dollarpay.transfer(account1.address, 60001)).to.be.revertedWith("ERC20: transfer amount exceeds balance")
     });
 
-    it("should have transferExternal functionality", async function () {
-        const [owner, account1] = await ethers.getSigners()
-        let balance = await getBalance(owner.address)
-        let gasPrice, gasLimit;
-        // send 1 ether and transfer 30000 cents (0.5 ether) to account1
-        ({gasPrice, gasLimit} = await dollarpay.transferExternal(account1.address, 30000, {value: String(10 ** 18)}))
-
-
-        let newBalance = await getBalance(owner.address)
-        // should have received 0.5 ether back
-        expect(newBalance).to.be.greaterThan(balance - 5 * 10 ** 17 - gasLimit * gasPrice)
-        expect(newBalance).to.be.lessThan(balance - 5 * 10 ** 17)
-
-        expect(parseInt(await dollarpay.balanceOf(account1.address))).to.be.equal(30000)
-    });
-
     it("should have transferFrom functionality", async function () {
         const [owner, account1, account2] = await ethers.getSigners()
         await dollarpay.connect(account1).deposit({value: String(10 ** 16)}) // fee

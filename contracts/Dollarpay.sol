@@ -120,16 +120,6 @@ contract Dollarpay is IERC20 {
         return true;
     }
 
-    function transferExternal(address recipient, uint256 amount) public payable returns (bool){
-        // TODO: maybe deprecate transferExternal or implement fees for it
-        require(recipient != address(0), "transfer to the zero address");
-        uint256 dollarEquivalentAmount = amount * _priceMultiplier;
-        require(msg.value >= dollarEquivalentAmount);
-        _balances[recipient] = _balances[recipient].add(dollarEquivalentAmount);
-        msg.sender.transfer(msg.value - dollarEquivalentAmount);
-        return true;
-    }
-
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _pay_fee_and_update_price(msg.sender);
         uint256 dollarEquivalentAmount = amount * _priceMultiplier;

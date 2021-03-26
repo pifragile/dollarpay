@@ -19,10 +19,12 @@ module.exports = {
 
 
 task("deploy:dollarpay", "Deploys the Dollarpay smart contract")
-    .addParam("oracle", "The price feed oracle address")
+    .addParam("pricefeed", "The price feed oracle address")
+    .addParam("gaspricefeed", "The gas  price feed oracle address")
+    .addParam("fee", "The initial fee for the contract")
     .setAction(async taskArgs => {
         const Dollarpay = await ethers.getContractFactory("Dollarpay");
-        const dollarpay = await Dollarpay.deploy(taskArgs.oracle);
+        const dollarpay = await Dollarpay.deploy(taskArgs.pricefeed, taskArgs.gaspricefeed, taskArgs.fee);
         await dollarpay.deployed();
 
         console.log("Dollarpay deployed to:", dollarpay.address);

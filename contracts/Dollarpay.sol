@@ -24,18 +24,24 @@ contract Dollarpay is IERC20 {
     string private _name;
     string private _symbol;
     uint8 private _decimals;
+    uint256 private _fee;
+    int256 private _last_update_block_number;
 
     // multiplier used to convert from USD cents to wei
     uint256 _priceMultiplier;
 
     AggregatorV3Interface internal priceFeed;
+    AggregatorV3Interface internal gasPriceFeed;
 
-    constructor(address oracleAddress) {
-        priceFeed = AggregatorV3Interface(oracleAddress);
+    constructor(address priceFeedAddress, address gasPriceFeedAddress, uint256 initialFee) {
+        priceFeed = AggregatorV3Interface(priceFeedAddress);
+        gasPriceFeed = AggregatorV3Interface(gasPriceFeedAddress);
         _decimals = 2;
         setPriceMultiplier();
         _name = "Dollarpay";
         _symbol = "DOP";
+        _fee = initialFee;
+        _last_update_block_number = int256(block.number);
     }
 
     function name() public view returns (string memory) {
@@ -48,6 +54,10 @@ contract Dollarpay is IERC20 {
 
     function decimals() public view returns (uint8) {
         return _decimals;
+    }
+
+    function fee() public view returns (uint256) {
+        return _fee;
     }
 
     function deposit() public payable returns (bool){
@@ -64,6 +74,11 @@ contract Dollarpay is IERC20 {
 
     function getLatestPrice() internal view returns (int) {
         (,int price,,,) = priceFeed.latestRoundData();
+        return price;
+    }
+
+    function getLatestGasPrice() internal view returns (int) {
+        (,int price,,,) = gasPriceFeed.latestRoundData();
         return price;
     }
 
@@ -99,12 +114,14 @@ contract Dollarpay is IERC20 {
 
 
     function transfer(address recipient, uint256 amount) public override returns (bool){
+        _pay_fee_and_update_price(msg.sender);
         uint256 dollarEquivalentAmount = amount * _priceMultiplier;
         _transfer(msg.sender, recipient, dollarEquivalentAmount);
         return true;
     }
 
     function transferExternal(address recipient, uint256 amount) public payable returns (bool){
+        // TODO: maybe deprecate transferExternal or implement fees for it
         require(recipient != address(0), "transfer to the zero address");
         uint256 dollarEquivalentAmount = amount * _priceMultiplier;
         require(msg.value >= dollarEquivalentAmount);
@@ -114,6 +131,7 @@ contract Dollarpay is IERC20 {
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+        _pay_fee_and_update_price(msg.sender);
         uint256 dollarEquivalentAmount = amount * _priceMultiplier;
         _transfer(sender, recipient, dollarEquivalentAmount);
         _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(dollarEquivalentAmount, "ERC20: transfer amount exceeds allowance"));
@@ -121,6 +139,7 @@ contract Dollarpay is IERC20 {
     }
 
     function approve(address spender, uint256 amount) public virtual override returns (bool) {
+        _pay_fee_and_update_price(msg.sender);
         uint256 dollarEquivalentAmount = amount * _priceMultiplier;
         _approve(msg.sender, spender, dollarEquivalentAmount);
         return true;
@@ -137,11 +156,53 @@ contract Dollarpay is IERC20 {
 
     function _transfer(address sender, address recipient, uint256 amount) internal virtual {
         require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
 
         _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
         _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
+    }
+
+    function _pay_fee_and_update_price(address sender) internal {
+        _balances[sender] = _balances[sender].sub(_fee, "Not enough balance to pay fee");
+        _balances[address(0)] = _balances[address(0)].add(_fee);
+
+        int256 blockNumber = int256(block.number);
+        if (blockNumber - _last_update_block_number > 100) {
+            _update_price_and_refund_gas_cost(sender);
+            _last_update_block_number = blockNumber;
+        }
+    }
+
+    function _update_price_and_refund_gas_cost(address sender) internal {
+        setPriceMultiplier();
+
+        int256 gasPriceSigned = getLatestGasPrice();
+        require(gasPriceSigned > 0);
+        // gasPriceOracle returns price in Gwei
+        uint256 gasPrice = uint256(gasPriceSigned) * 10 ** 9;
+
+
+        uint256 gasCost = 56680;
+
+        uint256 refundAmount = gasPrice * gasCost;
+
+        uint256 refundAccountBalance = _balances[address(0)];
+        int256 difference = int256(refundAccountBalance) - int256(refundAmount);
+
+        if (difference >= 0) {
+            _balances[address(0)] = uint256(difference);
+            _balances[sender] = _balances[sender].add(refundAmount);
+
+            // if we have enough funds in the refund account, we decrease the fee.
+            if (uint256(difference) > 10 * refundAmount) {
+                _fee = (_fee / 10) * 9;
+            }
+        } else {
+            _balances[sender] = _balances[sender].add(_balances[address(0)]);
+            _balances[address(0)] = 0;
+            // if we have insufficient funds for the refund, we increase the fee.
+            _fee = (_fee / 10) * 12;
+        }
     }
 
 }
